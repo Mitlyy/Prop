@@ -22,12 +22,12 @@ t = np.arange(-T/2, T/2, dt)  # array
 f0 = c/lambda0  # Central freq
 omega0 = 2 * math.pi * f0
 df = 1/T
-f = np.arange(-(N-1)*df, N*df/2, df)[:32768]
+f = np.arange(-(N-1)*df/2, N*df/2, df)[:32768]
 omega = 2 * math.pi * f
 
 # Space params #
 N0_air = 1
-a_air = 1.0959 * 1E-45
+a_air = 2.0959 * 1E-45
 b_air = 0
 
 # water
@@ -55,34 +55,28 @@ L_nl = lambda0/(16 * n2_cr1 * I0)
 temp = round(z_cr/(L_nl*0.01))
 h_cr = z_cr/temp
 
-H_dd_cr = fftshift(np.exp(-1j*k_z_cr[:N]*(h_cr/2)))
-E_prop_dd_cr = E_in
+D = fftshift(np.exp(-1j*k_z_cr[:N]*(h_cr/2)))
+Ein = E_in.copy()
+
 for i in range(temp):
-	H_nl_cr = np.exp(1j * g_cr * (abs(E_prop_dd_cr) ** 2) * h_cr)
-	G_space_cr_next = fft(E_prop_dd_cr)
-	G_prop_dd_cr = G_space_cr_next * H_dd_cr
-	E_prop_dd_cr = ifft(G_prop_dd_cr)
-	# E_prop_dd_cr = ifft((G_prop_dd_cr), 'symmetric');
+	N = 1j * g_cr * abs(Ein)**2
+	y = fft(Ein)
+	y = D * y
+	y = ifft(y)
+	y = np.exp(h_cr * N) * y
+	y = fft(y)
+	y = D * y
+	y = ifft(y)
 
-	E_prop_nl_dd_cr = E_prop_dd_cr * H_nl_cr
-	G_space_cr_next = fft(E_prop_nl_dd_cr)
-	G_prop_dd_cr = G_space_cr_next * H_dd_cr
-	E_prop_dd_cr = ifft(G_prop_dd_cr)
 
-G_output_cr_consrn2 = G_space_cr_next
-G_input_air2 = G_output_cr_consrn2
-E_input_air2 = ifft(G_input_air2)
-
-fig, ax = plt.subplot_mosaic([['a', 'a'], ['b', 'b']])
-ax['a'].plot(t, E_input_air2.real)
-ax['a'].plot(t, E_in, color="black")
-ax['a'].legend(['Signal', 'Real'], loc="lower right")
+fig, ax = plt.subplot_mosaic([['a', 'b'], ['a', 'b']])
+ax['a'].plot(t, y.real)
+ax['a'].plot(t, Ein, color="black")
+ax['a'].legend(['In', 'Out'], loc="lower right")
 ax['a'].set_xlim([-0.5 * 1E-11, 0.5 * 1E-11])
 
-ax['b'].plot(f, abs(fftshift(fft(E_in))))
-ax['b'].plot(f, abs(fftshift(G_output_cr_consrn2)), dashes=[4, 2], color = 'black')
-ax['b'].legend(["Real", "Hilbert"], loc="upper right")
-ax['b'].set_xlim([-2.12 * 1E+14, -1.975 * 1E+14])
+ax['b'].plot(f, abs(fftshift(fft(Ein))))
+ax['b'].plot(f, abs(fftshift(fft(y))), dashes=[4, 2], color = 'black')
+ax['b'].legend(["In", "Out"], loc="upper right")
+ax['b'].set_xlim([0, 4 * 1E+12])
 plt.show()
-
-Huieta
