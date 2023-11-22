@@ -43,4 +43,3 @@ E0_t = crank(E_in, 20)
 E_out = fftshift(fft(E0_t))
 plt.plot(t[len(t)-len(E_out):], abs(E_out))
 plt.show()
-    
